@@ -12,6 +12,7 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from memory import load_history, save_history
 from tools import TOOLS, dispatch
 
 load_dotenv()  # 从 .env 读取配置
@@ -76,9 +77,13 @@ def run_agent(user_input: str, history: list) -> str:
 
 
 def main() -> None:
+    session_id = "default"  # 会话名，未来可以按用户/日期分文件
+    history = load_history(session_id)
+
     print("最小 Agent 已启动，输入 exit 退出。")
-    print(f"模型：{os.getenv('LLM_MODEL', 'deepseek-chat')}，工具：3 个\n")
-    history = []
+    print(f"模型：{os.getenv('LLM_MODEL', 'deepseek-chat')}，工具：3 个")
+    print(f"已恢复 {len(history)} 条历史消息\n")
+
     while True:
         try:
             user_input = input("你 > ").strip()
@@ -88,7 +93,9 @@ def main() -> None:
             break
         if not user_input:
             continue
+
         answer = run_agent(user_input, history)
+        save_history(session_id, history)  # 落盘，下一轮重启还能读到
         print(f"\nAgent > {answer}\n")
 
 
